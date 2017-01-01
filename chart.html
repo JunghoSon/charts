@@ -72,8 +72,8 @@ var dummy_val = {	// chart json 데이터
 	"items":[
     	['외부패널 교환',-7.4],	//점수, 대수, 가격
     	['주행거리 많음',-7],
-		['흰색',1],
-		['썬루프',2]
+		['흰색',3],
+		['썬루프',4]
     ]
 };
 
@@ -451,6 +451,7 @@ function set_chart_val(){
 	var score = 100;
 	var xPlotLine = [];
 	var lastScore = 0;
+    var result = [];
 
 	for(var i=0; i<items.length; i++){
 		var arr = [];
@@ -479,6 +480,29 @@ function set_chart_val(){
 
 		xPlotLine[i] = plObj;
 	}
+
+    // var data = [result[0][1],result[1][1],result[2][1],result[3][1]];
+    // result = [{}];
+    // result[0].data = data;
+    // result[0].zoneAxis = 'x';
+    // result[0].zones=[
+    //     {
+    //         value:1,
+    //         color:'rgba(204,0,30,0.5)'
+    //     },
+    //     {
+    //         value:2,
+    //         color:'rgba(204,0,30,0.5)'
+    //     },
+    //     {
+    //         value:3,
+    //         color:'rgba(0,0,0,0.5)'
+    //     },
+    //     {
+    //         color:'rgba(0,0,0,0.5)',
+    //         value:4
+    //     }
+    // ];
 
 	new Highcharts.Chart({
         chart : {
@@ -588,6 +612,7 @@ function set_chart_val(){
             }
         },
 
+        //series: result
         series: [{data:result}]
     },function(chart){
 
@@ -891,17 +916,7 @@ function set_chart_days(){
 function set_chart_years(){
 	if(!$('#graph_years').length) return;
 
-	var items = dummy_years.items;//,
-	// 	max = items[0][1]
-    //     min = items[0][1];
-    //
-	// for(var i=1; i<items.length; i++){
-	// 	if(max < items[i][1]) max = items[i][1];
-	// 	if(min > items[i][1]) min = items[i][1];
-	// }
-    //
-	// max += 200;
-	// min -= 200;
+	var items = dummy_years.items;
 
 	new Highcharts.Chart({
         chart : {
@@ -927,16 +942,9 @@ function set_chart_years(){
             categories:[
                 '1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'
             ],
-            // tickAmount : 4,
-            // endOnTick : true,
-            // showLastLabel : true,
-            // startOnTick : true,
-            // crosshair : false,
 			gridLineWidth:2,
 			gridLineDashStyle:'shortdot',
-			// gridZIndex:1,
-            // allowDecimals : false,
-			tickWidth: 0,//,
+			tickWidth: 0,
             labels : {
 				align : 'center',
 				x : 0,
@@ -958,10 +966,6 @@ function set_chart_years(){
 			endOnTick : true,
             showLastLabel : true,
 			gridLineWidth:0,
-			// gridLineDashStyle:'shortdot',
-			// gridZIndex:1,
-			// max: max,
-			// min: 0,
             labels : {
 				align : 'right',
 				x : -10,
@@ -1020,7 +1024,8 @@ function set_chart_prd(){
         items[i].marker = {
             fillColor:'#fff',
             radius:4,
-            lineWidth:2
+            lineWidth:2,
+            symbol:'circle'
         };
 
         c1 = (Number(items[i].yAxis) === 0) ? 'rgba(204,0,30,0.2)' : 'rgba(255,156,0,0.2)';
