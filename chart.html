@@ -46,6 +46,12 @@ hr{padding:20px 0;border:0 none}
 <div id="graph_years">
 
 </div>
+
+<hr />
+
+<div id="graph_prd">
+
+</div>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script type="text/javascript" src="./highcharts.min.js"></script>
 <script type="text/javascript">
@@ -149,20 +155,18 @@ var dummy_years = {	// chart json 데이터
 var dummy_prd = {
     "items":[
         {
-            name: '동급매물수',
-            yAxis: 1,   //동급매물수 일때 yAxis:1 추가
-            type: 'areaspline',
-            dashStyle: 'shortdot',
-            data: [11000, 8000, 8100, 10500, 8400, 11000, 10000, 9000]
+            "yAxis": 0,   //검색자수 일때 1 추가
+            //"data": [5000, 3800, 3700, 3300, 4000, 3000, 2900, 2000]
+            "data": [9000, 8800, 6700, 3300, 4000, 3000, 2900, 2000]
         },
 
         {
-            name: '검색자수',
-            type: 'areaspline',
-            data: [5000, 3800, 3700, 3300, 4000, 3000, 2900, 2000]
-
+            "yAxis": 1,   //동급매물수 일때 1 추가
+            "data": [11000, 8000, 8100, 10500, 8400, 11000, 10000, 9000]
         }
-    ]
+    ],
+
+    "period": ['8/1주', '8/2주', '8/3주', '8/4주', '9/1주', '8/2주', '9/3주', '9/4주'] //기간
 };
 
 (function($){
@@ -176,6 +180,7 @@ function init(){
 	set_chart_price();
     set_chart_days();
     set_chart_years();
+    set_chart_prd();
 }
 
 function set_tab(){
@@ -995,6 +1000,114 @@ function set_chart_years(){
                     }
 				}
 			}
+        },
+
+        series: items
+    },function(chart){
+
+    });
+}
+
+function set_chart_prd(){
+	if(!$('#graph_prd').length) return;
+
+	var items = dummy_prd.items,
+        period = dummy_prd.period,
+        c1,c2;
+
+    for(var i=0; i< items.length; i++){
+        items[i].type = 'area';
+        items[i].marker = {
+            fillColor:'#fff',
+            radius:4,
+            lineWidth:2
+        };
+
+        c1 = (Number(items[i].yAxis) === 0) ? 'rgba(204,0,30,0.2)' : 'rgba(255,156,0,0.2)';
+        c2 = (Number(items[i].yAxis) === 0) ? 'rgba(204,0,30,1)' : 'rgba(255,156,0,1)';
+
+        items[i].fillColor = c1;
+        items[i].lineColor = c2;
+        items[i].marker.lineColor = c2;
+    }
+
+	new Highcharts.Chart({
+        chart : {
+        	renderTo : 'graph_prd',
+			spacingRight: 30,
+			spacingBottom: 30,
+            spacingTop: 30,
+			width:540,
+			height:300
+        },
+
+        title : {
+            text : ''
+        },
+
+        legend : {
+            enabled : false
+        },
+
+        navigation : null,
+
+        xAxis: [{
+            categories: period,
+            tickWidth:0,
+            gridLineWidth:2,
+            gridLineDashStyle:'shortdot'
+        }],
+
+        yAxis: [{
+            gridLineWidth:0,
+            labels: {
+                format: '{value}명',
+                style: {
+                    color: 'rgba(255,156,0,1)'
+                }
+            },
+            title: {
+                text: '검색자수',
+                offset: 0,
+                align: 'high',
+                x:-15,
+                y:-20,
+                rotation:360,
+                style: {
+                    color: 'rgba(255,156,0,1)'
+                }
+            },
+            min:1500
+        },
+        {
+            gridLineWidth:0,
+            tickAmount:4,
+            title: {
+                text: '동급매물수',
+                align: 'high',
+                offset: 0,
+                x:0,
+                y:-20,
+                rotation:360,
+                style: {
+                    color: 'rgba(204,0,30,1)'
+                }
+            },
+            labels: {
+                format: '{value}대',
+                style: {
+                    color: 'rgba(204,0,30,1)'
+                }
+            },
+            opposite: true
+        }],
+
+        tooltip : {
+            enabled: false
+        },
+
+        credits : {
+            enabled : false
         },
 
         series: items
