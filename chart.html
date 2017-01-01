@@ -1,0 +1,1010 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="ko">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=euc-kr" />
+<title></title>
+<style type="text/css">
+*{margin:0;padding:0}
+
+hr{padding:20px 0;border:0 none}
+
+.label_graph_days{}
+.label_graph_days dt{font-size:14px;color:#cc001e;font-weight:normal}
+.label_graph_days dt strong{font-weight:bold}
+.label_graph_days dt span{display:inline-block;padding-left:5px;margin-left:5px}
+.label_graph_days dd{font-size:12px;font-weight:normal;color:#333}
+.label_graph_days dd span{display:inline-block;padding-left:5px;margin-left:5px}
+.label_graph_days dd span:first-child{padding-left:0;margin-left:0}
+</style>
+</head>
+<body>
+<div id="graph_like">
+
+</div>
+
+<hr />
+
+<div id="graph_val">
+
+</div>
+
+<hr />
+
+<div id="graph_price">
+
+</div>
+
+<hr />
+
+<div id="graph_days">
+
+</div>
+
+<hr />
+
+<div id="graph_years">
+
+</div>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript" src="./highcharts.min.js"></script>
+<script type="text/javascript">
+var $jq = jQuery.noConflict();
+
+var dummy_like = {	// chart json 데이터
+    "items":[
+		[1, 1700],	//--일전, 광고가격
+		[5, 1750],
+		[10, 1860],
+		[14, 1880],
+		[21, 1870],
+		[28, 1940]
+    ]
+};
+
+var dummy_val = {	// chart json 데이터
+	"items":[
+    	['외부패널 교환',-7.4],	//점수, 대수, 가격
+    	['주행거리 많음',-7],
+		['흰색',1],
+		['썬루프',2]
+    ]
+};
+
+var dummy_price = {	// chart json 데이터
+    "items":[
+		[90, 1700],	//점수, 광고가격
+		[91, 1750],
+		[83, 1860],
+		[85, 1880],
+		[88, 1870],
+		[97, 1940],
+		[99, 2100]
+    ],
+
+	"area":{	//레드존
+		'start': 85,
+		'end': 90
+	},
+
+	"current":[88, 1870] //내차
+};
+
+var dummy_days = {	// chart json 데이터
+    "items":[
+		[10, 1700],	//판매일수, 광고가격
+		[11, 1750],
+		[13, 1860],
+		[14, 1880],
+		[15, 1870],
+		[20, 1940],
+		[27, 600],
+        [21, 1750],
+		[23, 1860],
+		[24, 1880],
+		[30, 1870],
+		[30, 1940],
+		[31, 2100],
+        [33, 1870],
+		[40, 1940],
+		[51, 2100],
+        [55, 2100],
+    ],
+
+	"current":{//내차
+        "days": 27,
+        "price": 600,
+        "info":{
+            "Score": '98.2점',
+            "Manufacturer": "BMW",
+            "Model": "3시리즈 (F30)",
+            "Badge": "320d xDrive 투어링",
+            "Year": "2013년식",
+            "Mileage": "96,800km",
+            "Accident": "무사고",
+            "Color": "은색",
+            "Options": "옵션없음",
+            "Modify": 2,
+            "Price_start": 2680,
+            "Price": 2620
+        }
+    }
+};
+
+var dummy_years = {	// chart json 데이터
+    "items":[
+		{
+            "name": 2016,
+            "data": [3400,3300,3210,3210,3200,3150,3100,3000],
+            "color": "#cc001e" //현재 년도 컬러코드
+        },
+        {
+            "name": 2015,
+            "data": [3800,3700,3610,3610,3600,3550,3500,3480,3470,3460,3400,3400],
+            "color": "#333"
+        }
+    ]
+};
+
+var dummy_prd = {
+    "items":[
+        {
+            name: '동급매물수',
+            yAxis: 1,   //동급매물수 일때 yAxis:1 추가
+            type: 'areaspline',
+            dashStyle: 'shortdot',
+            data: [11000, 8000, 8100, 10500, 8400, 11000, 10000, 9000]
+        },
+
+        {
+            name: '검색자수',
+            type: 'areaspline',
+            data: [5000, 3800, 3700, 3300, 4000, 3000, 2900, 2000]
+
+        }
+    ]
+};
+
+(function($){
+'use strict';
+
+function init(){
+	set_tab();
+	set_layer();
+	set_chart_val();
+	set_chart_like();
+	set_chart_price();
+    set_chart_days();
+    set_chart_years();
+}
+
+function set_tab(){
+	tabUI($('.ui_tab'));
+}
+
+function set_layer(){
+	$('.u_btn_layer').on('click',function(){
+		var layer = $(this).attr('data-layer');
+		display_layer($('.' + layer));
+	});
+
+	$('.u_btn_layer_close').on('click',function(){
+		var layer = $(this).closest('.layer_mdl');
+		display_layer(layer);
+	});
+}
+
+function display_layer(layer){
+	if(!layer.hasClass('on')){
+		layer.addClass('on');
+	}else{
+		layer.removeClass('on');
+	}
+}
+
+function tabUI(scope){
+	var current = null;
+
+	function init(){
+		cache_elem();
+		set_event();
+	}
+
+	function cache_elem(){
+		var menu = scope.find('.ui_tab_menu a'),
+			cont = scope.find('.ui_tab_content');
+
+		menu.each(function(a){
+			var self = $(this),
+				content = cont.eq(a);
+
+			self.data('cont',content);
+
+			if(self.hasClass('on')) active(self);
+		});
+	}
+
+	function set_event(){
+		scope.on('click', 'ul.ui_tab_menu a', function(){
+			if(current) deactive(current);
+			active($(this));
+			return false;
+		});
+	}
+
+	function active(item){
+		item.addClass('on');
+		item.data('cont').addClass('on');
+		current = item;
+	}
+
+	function deactive(item){
+		item.removeClass('on');
+		item.data('cont').removeClass('on');
+	}
+
+	init();
+}
+
+function set_chart_like(){
+	if(!$('#graph_like').length) return;
+
+	var items = dummy_like.items;
+	var max = items[0][1],
+		min = items[0][1];
+
+	for(var i=1; i<items.length; i++){
+		if(max < items[i][1]) max = items[i][1];
+		if(min > items[i][1]) min = items[i][1];
+	}
+
+	max += 100;
+	min -= 100;
+
+	new Highcharts.Chart({
+        chart : {
+        	renderTo : 'graph_like',
+            type : 'areaspline',
+			spacingRight: 30,
+			spacingBottom: 30,
+            width:340,
+            height:150
+        },
+
+        title : {
+            text : ''
+        },
+
+        legend : {
+            enabled : false
+        },
+
+        navigation : null,
+
+        xAxis : {
+			plotLines:[{
+            	value : 28,
+				width: 2,
+                color : '#e5e5e5',
+				dashStyle: 'shortdot',
+                label:{
+					y: 20,
+					text:'4주전',
+					color: '#7f7f7f',
+                	rotation:360,
+                	align:'center',
+                	verticalAlign:'bottom',
+                	useHTML:false,
+					style: {
+						fontSize : '11px',
+						color:'#7f7f7f'
+					}
+                }
+            },{
+            	value : 21,
+				width: 2,
+                color : '#e5e5e5',
+				dashStyle: 'shortdot',
+                label:{
+					y: 20,
+					text:'3주전',
+                	rotation:360,
+                	align:'center',
+                	verticalAlign:'bottom',
+                	useHTML:false,
+					style: {
+						fontSize : '11px',
+						color:'#7f7f7f'
+					}
+                }
+            },{
+            	value : 14,
+				width: 2,
+                color : '#e5e5e5',
+				dashStyle: 'shortdot',
+                label:{
+					y: 20,
+					text:'2주전',
+                	rotation:360,
+                	align:'center',
+                	verticalAlign:'bottom',
+                	useHTML:false,
+					style: {
+						fontSize : '11px',
+						color:'#7f7f7f'
+					}
+                }
+            },{
+            	value : 7,
+				width: 2,
+                color : '#e5e5e5',
+				dashStyle: 'shortdot',
+                label:{
+					y: 20,
+					text:'1주전',
+                	rotation:360,
+                	align:'center',
+                	verticalAlign:'bottom',
+                	useHTML:false,
+					style: {
+						fontSize : '11px',
+						color:'#7f7f7f'
+					}
+                }
+            },{
+            	value : 1,
+				width: 2,
+                color : '#e5e5e5',
+				dashStyle: 'shortdot',
+                label:{
+					y: 20,
+					text:'어제',
+                	rotation:360,
+                	align:'center',
+                	verticalAlign:'bottom',
+                	useHTML:false,
+					style: {
+						fontSize : '11px',
+						color:'#7f7f7f'
+					}
+                }
+            }],
+            endOnTick : false,
+            showLastLabel : true,
+            startOnTick : true,
+            crosshair : false,
+            allowDecimals : false,
+			tickWidth: 0,
+			reversed: true,
+			max: 28,
+			min: 1,
+            labels : false
+        },
+
+        yAxis : {
+            title : {
+                text : ''
+            },
+            tickAmount : 4,
+			tickInterval: 200,
+			startOnTick : false,
+			endOnTick : false,
+            showLastLabel : true,
+			max: max,
+			min: min,
+            labels : {
+				align : 'right',
+				x : -10,
+				y : 0,
+				style : {
+					fontSize: '11px',
+					color: '#858585'
+				},
+				formatter : function () {
+					var numberComma=Highcharts.numberFormat(this.value, 0, ',');
+					return numberComma+'만원';
+				}
+			}
+        },
+
+        tooltip : {
+            enabled: false
+        },
+
+        credits : {
+            enabled : false
+        },
+
+        plotOptions: {
+            areaspline: {
+                fillOpacity: 0.5,
+                fillColor:'rgba(235,235,235,.7)',
+                lineWidth: 2,
+                lineColor:'#cc001e',
+				marker: {
+					enabled: true,
+					radius: 4,
+					symbol: 'circle',
+					lineWidth: 3,
+					lineColor: '#cc001e',
+					fillColor : '#fff'
+				}
+            }
+        },
+
+        series: [{data:items}]
+    },function(chart){
+
+    });
+}
+
+function set_chart_val(){
+	if(!$('#graph_val').length) return;
+
+	var items = dummy_val.items;
+	var result = [];
+	var score = 100;
+	var xPlotLine = [];
+	var lastScore = 0;
+
+	for(var i=0; i<items.length; i++){
+		var arr = [];
+		score += items[i][1];
+
+		if(i === items.length-1) lastScore = score;
+
+		arr[0] = items[i][0];
+		arr[1] = score;
+		result[i] = arr;
+
+		var fontColor = (Number(items[i][1]) < 0) ? '#cc001e' : '#666';
+		var plObj = {
+			value: i,
+			width: 1,
+			color: '#e3e3e3',
+			zIndex: 1,
+			label: {
+				rotation: 360,
+				text: '<span style="display:block;position:relative;line-height:13px;padding-bottom:5px;background:#fff;color:' + fontColor + ';text-align:center">'+ items[i][0] + '<span style="display:block;color:' + fontColor + '">(' + items[i][1] +')</span>'+'</span>',
+				align: 'center',
+				verticalAlign: 'top',
+				useHTML: true
+			}
+		}
+
+		xPlotLine[i] = plObj;
+	}
+
+	new Highcharts.Chart({
+        chart : {
+        	renderTo : 'graph_val',
+            type : 'areaspline',
+			spacingRight: 50,
+			spacingLeft: 40,
+			width:340,
+			height:150
+        },
+
+        title : {
+            text : ''
+        },
+
+        legend : {
+            enabled : false
+        },
+
+        navigation : null,
+
+        xAxis : {
+            plotLines: xPlotLine,
+            endOnTick : false,
+            showLastLabel : true,
+            startOnTick : false,
+            crosshair : false,
+            allowDecimals : false,
+			tickWidth: 0,
+            labels : false
+        },
+
+        yAxis : {
+            title : {
+                text : ''
+            },
+            plotLines:[{
+            	value : 100,
+            	width: 2,
+                color : '#888',
+                zIndex : 4,
+				dashStyle: 'shortdot'
+            },{
+				value: lastScore,
+				label: {
+					x: 45,
+					y: 10,
+					rotation: 360,
+					text: lastScore + '점',
+					align: 'right',
+					style:{
+						fontWeight: 'bold'
+					},
+					verticalAlign: 'top',
+					useHTML: false
+				}
+			}],
+			gridLineWidth: 0,
+            tickAmount : 4,
+			startOnTick : false,
+            endOnTick : false,
+			showLastLabel : false,
+            maxPadding : 0.25,
+			min:50,
+			max:120,
+            labels : {
+				align : 'right',
+				x : 285,
+				y : 4,
+				style : {
+					fontSize : '11px',
+					color: '#000'
+				},
+				formatter : function () {
+					var numberComma=Highcharts.numberFormat(this.value, 0, ',');
+					if(Number(numberComma) === 100){
+						return numberComma+'점';
+					}else{
+						return '';
+					}
+				}
+			}
+        },
+
+        tooltip : {
+			enabled: false
+        },
+
+        credits : {
+            enabled : false
+        },
+
+        plotOptions: {
+            areaspline: {
+                fillOpacity: 0.5,
+                fillColor:'rgba(235,235,235,.7)',
+                lineWidth: 2,
+                lineColor:'#cc001e',
+				marker: {
+					enabled: true,
+					radius: 4,
+					symbol: 'circle',
+					lineWidth: 3,
+					lineColor: '#cc001e',
+					fillColor : '#fff'
+				}
+            }
+        },
+
+        series: [{data:result}]
+    },function(chart){
+
+    });
+}
+
+function set_chart_price(){
+	if(!$('#graph_price').length) return;
+
+	var items = dummy_price.items,
+		z_start = dummy_price.area.start,
+		z_end= dummy_price.area.end,
+		max = items[0][1],
+		min = items[0][1],
+		my_score = dummy_price.current;
+
+	for(var i=1; i<items.length; i++){
+		if(max < items[i][1]) max = items[i][1];
+		if(min > items[i][1]) min = items[i][1];
+	}
+
+	max += 200;
+	min -= 200;
+
+	new Highcharts.Chart({
+        chart : {
+        	renderTo : 'graph_price',
+            type : 'scatter',
+			spacingRight: 30,
+			spacingBottom: 30,
+			width:340,
+			height:150
+        },
+
+        title : {
+            text : ''
+        },
+
+        legend : {
+            enabled : false
+        },
+
+        navigation : null,
+
+        xAxis : {
+			plotBands:[{
+				borderColor: '#cc001e',
+				//borderWidth: 1,
+				from: z_start,
+				to: z_end,
+				color: 'rgba(0,0,0,0.2)',
+				zIndex: 2
+			}],
+            endOnTick : true,
+            showLastLabel : true,
+            startOnTick : true,
+            crosshair : false,
+			gridLineWidth:2,
+			gridLineDashStyle:'shortdot',
+			gridZIndex:1,
+            allowDecimals : false,
+			tickWidth: 0,
+            labels : {
+				align : 'center',
+				x : 0,
+				y : 20,
+				style : {
+					fontSize: '11px',
+					color: '#858585'
+				},
+				formatter : function () {
+					var numberComma=Highcharts.numberFormat(this.value, 0, ',');
+					return numberComma+'점';
+				}
+			}
+        },
+
+        yAxis : {
+            title : {
+                text : ''
+            },
+            tickAmount : 4,
+			tickInterval: 200,
+			startOnTick : true,
+			endOnTick : true,
+            showLastLabel : true,
+			gridLineWidth:2,
+			gridLineDashStyle:'shortdot',
+			gridZIndex:1,
+			max: max,
+			min: min,
+            labels : {
+				align : 'right',
+				x : -10,
+				y : 0,
+				style : {
+					fontSize: '11px',
+					color: '#858585'
+				},
+				formatter : function () {
+					var numberComma=Highcharts.numberFormat(this.value, 0, ',');
+					return numberComma+'만원';
+				}
+			}
+        },
+
+        tooltip : {
+            enabled: false
+        },
+
+        credits : {
+            enabled : false
+        },
+
+        plotOptions: {
+			scatter:{
+				marker: {
+					radius: 3,
+					fillColor: 'rgba(0,0,0,0.7)'
+				},
+				dataLabels:{
+					enabled: true,
+					shape:'callout',
+					borderRadius:10,
+					backgroundColor:'#000',
+					style:{
+						fontSize:11,
+						color:'#fff'
+					},
+					y:-7,
+					formatter: function(){
+						if(this.x === my_score[0] && this.y === my_score[1]){
+							return this.y +'만원';
+						}
+					}
+				}
+			}
+        },
+
+        series: [{data:items}]
+    },function(chart){
+
+    });
+}
+
+function set_chart_days(){
+	if(!$('#graph_days').length) return;
+
+	var items = dummy_days.items,
+		max = items[0][1],
+        my_car = dummy_days.current,
+        my_info = my_car.info;
+
+	for(var i=1; i<items.length; i++){
+		if(max < items[i][1]) max = items[i][1];
+	}
+
+	max += 200;
+
+	new Highcharts.Chart({
+        chart : {
+        	renderTo : 'graph_days',
+            type : 'scatter',
+			spacingRight: 30,
+			spacingBottom: 30,
+			width:540,
+			height:300
+        },
+
+        title : {
+            text : ''
+        },
+
+        legend : {
+            enabled : false
+        },
+
+        navigation : null,
+
+        xAxis : {
+            tickAmount : 4,
+            endOnTick : true,
+            showLastLabel : true,
+            startOnTick : true,
+            crosshair : false,
+			gridLineWidth:2,
+			gridLineDashStyle:'shortdot',
+			gridZIndex:1,
+            allowDecimals : false,
+			tickWidth: 0,
+            labels : {
+				align : 'center',
+				x : 0,
+				y : 20,
+				style : {
+					fontSize: '11px',
+					color: '#858585'
+				},
+				formatter : function () {
+					var numberComma=Highcharts.numberFormat(this.value, 0, ',');
+					return numberComma+'일';
+				}
+			}
+        },
+
+        yAxis : {
+            title : {
+                text : ''
+            },
+            tickAmount : 7,
+			tickInterval: 200,
+			startOnTick : true,
+			endOnTick : true,
+            showLastLabel : true,
+			gridLineWidth:2,
+			gridLineDashStyle:'shortdot',
+			gridZIndex:1,
+			max: max,
+			min: 0,
+            labels : {
+				align : 'right',
+				x : -10,
+				y : 0,
+				style : {
+					fontSize: '11px',
+					color: '#858585'
+				},
+				formatter : function () {
+					var numberComma=Highcharts.numberFormat(this.value, 0, ',');
+					return numberComma+'만원';
+				}
+			}
+        },
+
+        tooltip : {
+            enabled: false
+        },
+
+        credits : {
+            enabled : false
+        },
+
+        plotOptions: {
+			scatter:{
+                marker: {
+					enabled: true,
+					radius: 4,
+					symbol: 'circle',
+					lineWidth: 2,
+					lineColor: 'rgba(0,0,0,0.5)',
+					fillColor : '#fff',
+                    zIndex:5
+				},
+
+				dataLabels:{
+					enabled: true,
+					shape:'callout',
+					borderRadius:5,
+                    borderWidth:2,
+                    borderColor:'rgba(0,0,0,0.3)',
+                    padding:8,
+					backgroundColor:'rgba(0,0,0,0.1)',
+					style:{
+						fontSize:11,
+						color:'#000'
+					},
+					y:-7,
+                    useHTML: true,
+                    zIndex:20,
+					formatter: function(){
+						if(this.x === my_car.days && this.y === my_car.price){
+							return [
+                                '<dl class="label_graph_days">',
+                                    '<dt style="">',
+                                        '<strong>',my_info.Score,'</strong>',
+                                        '<span style="">',my_info.Manufacturer,my_info.Model,my_info.Badge,'</span>',
+                                    '</dt>',
+                                    '<dd>',
+                                        '<span>',my_info.Year,'</span>',
+                                        '<span>',my_info.Mileage,'</span>',
+                                        '<span>',my_info.Accident,'</span>',
+                                        '<span>',my_info.Color,'</span>',
+                                        '<span>',my_info.Options,'</span>',
+                                    '</dd>',
+                                    '<dd>최초가격 ',my_info.Price_start,'</dd>',
+                                    '<dd>판매가격 ',my_info.Price,'(가격수정 ',my_info.Modify,'회)','</dd>',
+                                '</dl>'
+                            ].join('');
+						}
+					}
+				}
+			}
+        },
+
+        series: [{data:items}]
+    },function(chart){
+
+    });
+}
+
+function set_chart_years(){
+	if(!$('#graph_years').length) return;
+
+	var items = dummy_years.items;//,
+	// 	max = items[0][1]
+    //     min = items[0][1];
+    //
+	// for(var i=1; i<items.length; i++){
+	// 	if(max < items[i][1]) max = items[i][1];
+	// 	if(min > items[i][1]) min = items[i][1];
+	// }
+    //
+	// max += 200;
+	// min -= 200;
+
+	new Highcharts.Chart({
+        chart : {
+        	renderTo : 'graph_years',
+            type : 'spline',
+			spacingRight: 30,
+			spacingBottom: 30,
+			width:540,
+			height:300
+        },
+
+        title : {
+            text : ''
+        },
+
+        legend : {
+            enabled : false
+        },
+
+        navigation : null,
+
+        xAxis : {
+            categories:[
+                '1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'
+            ],
+            // tickAmount : 4,
+            // endOnTick : true,
+            // showLastLabel : true,
+            // startOnTick : true,
+            // crosshair : false,
+			gridLineWidth:2,
+			gridLineDashStyle:'shortdot',
+			// gridZIndex:1,
+            // allowDecimals : false,
+			tickWidth: 0,//,
+            labels : {
+				align : 'center',
+				x : 0,
+				y : 20,
+				style : {
+					fontSize: '11px',
+					color: '#858585'
+				}
+			}
+        },
+
+        yAxis : {
+            title : {
+                text : ''
+            },
+            tickAmount : 7,
+			tickInterval: 200,
+			startOnTick : true,
+			endOnTick : true,
+            showLastLabel : true,
+			gridLineWidth:0,
+			// gridLineDashStyle:'shortdot',
+			// gridZIndex:1,
+			// max: max,
+			// min: 0,
+            labels : {
+				align : 'right',
+				x : -10,
+				y : 0,
+				style : {
+					fontSize: '11px',
+					color: '#858585'
+				},
+				formatter : function () {
+					var numberComma=Highcharts.numberFormat(this.value, 0, ',');
+					return numberComma+'만원';
+				}
+			}
+        },
+
+        tooltip : {
+            enabled: false
+        },
+
+        credits : {
+            enabled : false
+        },
+
+        plotOptions: {
+			spline:{
+                marker: {
+					enabled: false,
+				},
+
+				dataLabels:{
+					enabled: true,
+                    formatter:function(){
+                        if(Number(this.point.index) === Number(this.series.data.length)-1){
+                            return '<span style="color:'+this.color+'">'+this.series.name+"</span>";
+                        }
+                    }
+				}
+			}
+        },
+
+        series: items
+    },function(chart){
+
+    });
+}
+
+init();
+}($jq));
+</script>
+</body>
+</html>
